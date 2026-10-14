@@ -1,6 +1,51 @@
 #!/usr/bin/env bash
 set -e
 
+# Helper function to download files with fallback to Node.js or Python
+download_file() {
+    local url="$1"
+    local dest="$2"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -sSL "$url" -o "$dest"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$url" -O "$dest"
+    elif command -v node >/dev/null 2>&1; then
+        node -e '
+const fs = require("fs");
+const https = require("https");
+const http = require("http");
+
+function fetchUrl(url, dest) {
+  const client = url.startsWith("https") ? https : http;
+  client.get(url, (res) => {
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      return fetchUrl(res.headers.location, dest);
+    }
+    if (res.statusCode !== 200) {
+      console.error("[ERROR] HTTP download failed with status " + res.statusCode);
+      process.exit(1);
+    }
+    const file = fs.createWriteStream(dest);
+    res.pipe(file);
+    file.on("finish", () => file.close());
+  }).on("error", (err) => {
+    console.error("[ERROR] Download failed: " + err.message);
+    process.exit(1);
+  });
+}
+fetchUrl(process.argv[1], process.argv[2]);
+' "$url" "$dest"
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c "import urllib.request, sys; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])" "$url" "$dest"
+    elif command -v python >/dev/null 2>&1; then
+        python -c "import urllib.request, sys; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])" "$url" "$dest"
+    else
+        echo "[ERROR] Neither curl, wget, node, nor python is available to download files." >&2
+        exit 1
+    fi
+}
+
 # Ensure Java runtime is available (fallback for Node/Python buildpacks)
 if ! command -v java >/dev/null 2>&1; then
     echo "[INFO] Java runtime not detected. Fetching portable OpenJDK 17 JRE..."
@@ -16,14 +61,7 @@ if ! command -v java >/dev/null 2>&1; then
         JRE_TAR="jre17.tar.gz"
         JRE_URL="https://api.adoptium.net/v3/binary/latest/17/ga/linux/${JDK_ARCH}/jre/hotspot/normal/eclipse"
         echo "[INFO] Downloading JRE from $JRE_URL..."
-        if command -v curl >/dev/null 2>&1; then
-            curl -sSL "$JRE_URL" -o "$JRE_TAR"
-        elif command -v wget >/dev/null 2>&1; then
-            wget -q "$JRE_URL" -O "$JRE_TAR"
-        else
-            echo "[ERROR] Neither curl nor wget is available." >&2
-            exit 1
-        fi
+        download_file "$JRE_URL" "$JRE_TAR"
         echo "[INFO] Extracting JRE..."
         tar -xzf "$JRE_TAR" -C jre --strip-components=1
         rm -f "$JRE_TAR"
@@ -40,14 +78,7 @@ DEFAULT_LAVALINK_URL="https://github.com/lavalink-devs/Lavalink/releases/latest/
 if [ ! -f "$LAVALINK_JAR" ]; then
     echo "[INFO] Lavalink.jar not found. Downloading latest release..."
     DOWNLOAD_URL="${LAVALINK_DOWNLOAD_URL:-$DEFAULT_LAVALINK_URL}"
-    if command -v curl >/dev/null 2>&1; then
-        curl -sSL "$DOWNLOAD_URL" -o "$LAVALINK_JAR"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -q "$DOWNLOAD_URL" -O "$LAVALINK_JAR"
-    else
-        echo "[ERROR] Neither curl nor wget is available to download Lavalink.jar." >&2
-        exit 1
-    fi
+    download_file "$DOWNLOAD_URL" "$LAVALINK_JAR"
     echo "[INFO] Lavalink.jar downloaded successfully."
 fi
 
