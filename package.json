@@ -1,0 +1,12 @@
+{
+  "name": "lavalink-server",
+  "version": "1.0.0",
+  "description": "Lavalink v4 server deployment",
+  "main": "start.sh",
+  "scripts": {
+    "start": "bash start.sh"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -8,12 +8,13 @@ A production-ready [Lavalink](https://github.com/lavalink-devs/Lavalink) v4 depl
 
 ```text
 lava/
-├── Procfile             # Defines the web process (web: bash start.sh)
-├── start.sh             # Bootstrapper (auto-downloads Lavalink.jar if absent & applies JVM flags)
+├── package.json         # Node.js buildpack trigger (runs bash start.sh)
+├── Procfile             # Process definition for Heroku-style buildpacks
+├── start.sh             # Bootstrapper (downloads Java 17 & Lavalink.jar if absent)
 ├── system.properties    # Specifies Java 17 for Heroku/JVM buildpacks
-├── pom.xml              # Maven packaging descriptor for Cloud Native/Paketo Java buildpacks
-├── application.yml      # Lavalink v4 configuration (port & password env vars, YouTube plugin)
-├── app.json             # Heroku deployment manifest & config vars definition
+├── pom.xml              # Maven packaging descriptor for Java buildpacks
+├── application.yml      # Lavalink v4 configuration (port & password env vars)
+├── app.json             # Heroku deployment manifest
 └── .gitignore           # Ignores runtime cache & logs
 ```
 

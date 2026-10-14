@@ -2,6 +2,9 @@
 logs/
 plugins/
 *.log
+jre/
+*.tar.gz
+Lavalink.jar
 
 # OS & Editor
 .DS_Store
