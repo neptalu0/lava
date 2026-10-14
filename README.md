@@ -8,6 +8,9 @@ A production-ready [Lavalink](https://github.com/lavalink-devs/Lavalink) v4 depl
 
 ```text
 lava/
+├── public/
+│   └── index.html       # Live stats web dashboard (players, CPU, RAM, connection details)
+├── server.js            # Node.js reverse proxy & dashboard API
 ├── package.json         # Node.js buildpack trigger (runs bash start.sh)
 ├── Procfile             # Process definition for Heroku-style buildpacks
 ├── start.sh             # Bootstrapper (downloads Java 17 & Lavalink.jar if absent)

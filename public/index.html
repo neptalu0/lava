@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lavalink Server Status</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-card: rgba(18, 24, 38, 0.7);
+      --bg-card-border: rgba(255, 255, 255, 0.08);
+      --accent-purple: #8b5cf6;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.25rem;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 45%);
+    }
+
+    .container {
+      max-width: 960px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+    }
+
+    .brand-title h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title p {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--accent-green);
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.starting {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.25);
+      color: var(--accent-amber);
+    }
+
+    .status-badge.offline {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: var(--accent-red);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Grid & Cards */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .metric-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Progress bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+
+    .stat-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.825rem;
+    }
+
+    .stat-row span:first-child {
+      color: var(--text-muted);
+    }
+
+    .stat-row span:last-child {
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Connection Details */
+    .connection-card {
+      grid-column: 1 / -1;
+    }
+
+    .details-table {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .field-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      position: relative;
+    }
+
+    .field-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .field-value-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .field-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #fff;
+      word-break: break-all;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+    }
+
+    .btn-icon:active {
+      transform: scale(0.96);
+    }
+
+    /* Notice banner */
+    .notice-box {
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px dashed rgba(139, 92, 246, 0.3);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.825rem;
+      color: #c4b5fd;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 1rem;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1>Lavalink Node</h1>
+          <p id="uptimeText">Uptime: Initializing...</p>
+        </div>
+      </div>
+      <div id="statusBadge" class="status-badge starting">
+        <span class="status-dot"></span>
+        <span id="statusLabel">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Stats Grid -->
+    <div class="grid">
+      <!-- Players Connected -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Players Connected</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="metric-value" id="playerCount">0</div>
+        <div class="metric-subtitle">
+          <span id="playingCount" style="color: var(--accent-green); font-weight: 600;">0</span> currently playing audio
+        </div>
+      </div>
+
+      <!-- CPU Usage -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">CPU Utilization</span>
+          <span class="card-title" id="cpuCores">-- Cores</span>
+        </div>
+        <div class="metric-value" id="cpuTotal">0.0%</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="cpuBar"></div>
+        </div>
+        <div class="stat-rows">
+          <div class="stat-row">
+            <span>System Load</span>
+            <span id="cpuSystem">0.0%</span>
+          </div>
+          <div class="stat-row">
+            <span>Lavalink Process</span>
+            <span id="cpuLavalink">0.0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- JVM Memory / Heap -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">JVM Heap Memory</span>
+          <span class="card-title" id="memPercent">0%</span>
+        </div>
+        <div class="metric-value" id="memUsed">0 MB</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="memBar"></div>
+        </div>
+        <div class="stat-rows">
+          <div class="stat-row">
+            <span>Allocated</span>
+            <span id="memAllocated">0 MB</span>
+          </div>
+          <div class="stat-row">
+            <span>Max Reservable</span>
+            <span id="memReservable">0 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connection Details Card -->
+      <div class="card connection-card">
+        <div class="card-header">
+          <span class="card-title">Bot Connection Details</span>
+          <span class="card-title" style="color: var(--accent-purple);">Lavalink v4 REST & WebSocket</span>
+        </div>
+
+        <div class="details-table">
+          <!-- Host -->
+          <div class="field-box">
+            <span class="field-label">Host</span>
+            <div class="field-value-wrapper">
+              <span class="field-value" id="hostVal">--</span>
+              <button class="btn-icon" onclick="copyText('hostVal', this)">Copy</button>
+            </div>
+          </div>
+
+          <!-- Port -->
+          <div class="field-box">
+            <span class="field-label">Port</span>
+            <div class="field-value-wrapper">
+              <span class="field-value" id="portVal">--</span>
+              <button class="btn-icon" onclick="copyText('portVal', this)">Copy</button>
+            </div>
+          </div>
+
+          <!-- Secure (SSL) -->
+          <div class="field-box">
+            <span class="field-label">Secure (SSL / WSS)</span>
+            <div class="field-value-wrapper">
+              <span class="field-value" id="secureVal" style="color: var(--accent-green);">true</span>
+              <button class="btn-icon" onclick="copyText('secureVal', this)">Copy</button>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field-box">
+            <span class="field-label">Password</span>
+            <div class="field-value-wrapper">
+              <span class="field-value" id="passVal">••••••••••••</span>
+              <div style="display: flex; gap: 0.35rem;">
+                <button class="btn-icon" id="togglePassBtn" onclick="togglePassword()">Show</button>
+                <button class="btn-icon" onclick="copyPassword(this)">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notice-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>Use the password specified in your <strong>LAVALINK_PASSWORD</strong> environment variable (or default <code>youshallnotpass</code>).</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <span>Auto-refreshing every 3s</span>
+      <span id="lastUpdated">Updated: Just now</span>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize host & port from current browser URL
+    const isHttps = window.location.protocol === 'https:';
+    const currentHost = window.location.hostname;
+    const currentPort = window.location.port || (isHttps ? '443' : '80');
+
+    document.getElementById('hostVal').innerText = currentHost;
+    document.getElementById('portVal').innerText = currentPort;
+    document.getElementById('secureVal').innerText = isHttps ? 'true' : 'false';
+
+    let actualPasswordPlaceholder = "youshallnotpass";
+    let isPasswordRevealed = false;
+
+    function togglePassword() {
+      const passSpan = document.getElementById('passVal');
+      const toggleBtn = document.getElementById('togglePassBtn');
+      if (isPasswordRevealed) {
+        passSpan.innerText = '••••••••••••';
+        toggleBtn.innerText = 'Show';
+        isPasswordRevealed = false;
+      } else {
+        passSpan.innerText = actualPasswordPlaceholder;
+        toggleBtn.innerText = 'Hide';
+        isPasswordRevealed = true;
+      }
+    }
+
+    function copyPassword(btn) {
+      navigator.clipboard.writeText(actualPasswordPlaceholder).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = originalText, 1500);
+      });
+    }
+
+    function copyText(elementId, btn) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = originalText, 1500);
+      });
+    }
+
+    function formatUptime(seconds) {
+      if (!seconds || seconds <= 0) return '0s';
+      const d = Math.floor(seconds / (3600 * 24));
+      const h = Math.floor((seconds % (3600 * 24)) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      
+      const parts = [];
+      if (d > 0) parts.push(`${d}d`);
+      if (h > 0) parts.push(`${h}h`);
+      if (m > 0) parts.push(`${m}m`);
+      parts.push(`${s}s`);
+      return parts.join(' ');
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        
+        const badge = document.getElementById('statusBadge');
+        const label = document.getElementById('statusLabel');
+
+        if (data.status === 'online') {
+          badge.className = 'status-badge';
+          label.innerText = 'Online';
+
+          if (data.passwordPlaceholder) {
+            actualPasswordPlaceholder = data.passwordPlaceholder;
+            if (isPasswordRevealed) {
+              document.getElementById('passVal').innerText = actualPasswordPlaceholder;
+            }
+          }
+
+          // Players
+          document.getElementById('playerCount').innerText = data.players ?? 0;
+          document.getElementById('playingCount').innerText = data.playingPlayers ?? 0;
+
+          // Uptime
+          document.getElementById('uptimeText').innerText = `Uptime: ${formatUptime(data.uptime)}`;
+
+          // CPU
+          const sysCpu = (data.cpu?.systemLoad ?? 0).toFixed(1);
+          const lavalinkCpu = (data.cpu?.lavalinkLoad ?? 0).toFixed(1);
+          const cores = data.cpu?.cores ?? '--';
+          
+          document.getElementById('cpuTotal').innerText = `${sysCpu}%`;
+          document.getElementById('cpuSystem').innerText = `${sysCpu}%`;
+          document.getElementById('cpuLavalink').innerText = `${lavalinkCpu}%`;
+          document.getElementById('cpuCores').innerText = `${cores} Cores`;
+          document.getElementById('cpuBar').style.width = `${Math.min(sysCpu, 100)}%`;
+
+          // Memory
+          const usedMb = data.memory?.used ?? 0;
+          const allocMb = data.memory?.allocated ?? 0;
+          const reservableMb = data.memory?.reservable ?? allocMb;
+          const pct = allocMb > 0 ? Math.round((usedMb / allocMb) * 100) : 0;
+
+          document.getElementById('memUsed').innerText = `${usedMb} MB`;
+          document.getElementById('memAllocated').innerText = `${allocMb} MB`;
+          document.getElementById('memReservable').innerText = `${reservableMb} MB`;
+          document.getElementById('memPercent').innerText = `${pct}%`;
+          document.getElementById('memBar').style.width = `${Math.min(pct, 100)}%`;
+
+        } else {
+          badge.className = 'status-badge starting';
+          label.innerText = data.message || 'Starting...';
+        }
+
+        document.getElementById('lastUpdated').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+      } catch (err) {
+        const badge = document.getElementById('statusBadge');
+        const label = document.getElementById('statusLabel');
+        badge.className = 'status-badge offline';
+        label.innerText = 'Connecting...';
+      }
+    }
+
+    fetchStats();
+    setInterval(fetchStats, 3000);
+  </script>
+</body>
+</html>
