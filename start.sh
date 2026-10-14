@@ -87,24 +87,5 @@ if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS="-Xmx${JVM_HEAP:-512M} -Xms${JVM_INITIAL_HEAP:-256M} -XX:+UseG1GC"
 fi
 
-# Configure ports: public PORT for web dashboard, internal port for Lavalink
-export LAVALINK_INTERNAL_PORT="${LAVALINK_INTERNAL_PORT:-2334}"
-PUBLIC_PORT="${PORT:-2333}"
-
-if [ -f "server.js" ] && command -v node >/dev/null 2>&1; then
-    echo "[INFO] Starting Lavalink internally on 127.0.0.1:$LAVALINK_INTERNAL_PORT..."
-    java $JAVA_OPTS -Dserver.address="127.0.0.1" -Dserver.port="$LAVALINK_INTERNAL_PORT" -jar "$LAVALINK_JAR" &
-    LAVALINK_PID=$!
-
-    cleanup() {
-        echo "[INFO] Terminating background processes..."
-        kill "$LAVALINK_PID" 2>/dev/null || true
-    }
-    trap cleanup EXIT INT TERM
-
-    echo "[INFO] Starting web dashboard & reverse proxy on public port $PUBLIC_PORT..."
-    PORT="$PUBLIC_PORT" node server.js
-else
-    echo "[INFO] Starting Lavalink standalone on port $PUBLIC_PORT with options: $JAVA_OPTS"
-    exec java $JAVA_OPTS -Dserver.port="$PUBLIC_PORT" -jar "$LAVALINK_JAR"
-fi
+echo "[INFO] Starting Lavalink on port ${PORT:-2333} with options: $JAVA_OPTS"
+exec java $JAVA_OPTS -Dserver.port="${PORT:-2333}" -jar "$LAVALINK_JAR"

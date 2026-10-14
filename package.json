@@ -1,8 +1,8 @@
 {
   "name": "lavalink-server",
   "version": "1.0.0",
-  "description": "Lavalink v4 server with live web stats dashboard",
-  "main": "server.js",
+  "description": "Lavalink v4 server deployment",
+  "main": "start.sh",
   "scripts": {
     "start": "bash start.sh"
   },
