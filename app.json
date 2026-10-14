@@ -1,0 +1,29 @@
+{
+  "name": "Lavalink Server",
+  "description": "Standalone audio sending node based on Lavaplayer for Discord bots",
+  "keywords": [
+    "lavalink",
+    "discord",
+    "music-bot",
+    "wavelink",
+    "discord.js",
+    "discord.py"
+  ],
+  "env": {
+    "LAVALINK_PASSWORD": {
+      "description": "The password used to authenticate client requests to Lavalink.",
+      "value": "youshallnotpass",
+      "required": true
+    },
+    "JVM_HEAP": {
+      "description": "Maximum memory allocation pool for the JVM (e.g. 512M).",
+      "value": "512M",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/jvm"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# Runtime logs & data
+logs/
+plugins/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Environment files
+.env
+*.env
